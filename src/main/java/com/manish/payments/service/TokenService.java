@@ -12,7 +12,7 @@ import org.springframework.util.MultiValueMap;
 import com.manish.payments.constant.Constant;
 import com.manish.payments.http.HttpRequest;
 import com.manish.payments.http.HttpServiceEngine;
-import com.manish.payments.paypal.PaypalOAuthToken;
+import com.manish.payments.paypal.res.PaypalOAuthToken;
 import com.manish.payments.util.JsonUtil;
 
 import lombok.RequiredArgsConstructor;
