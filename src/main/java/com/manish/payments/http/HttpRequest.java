@@ -16,3 +16,10 @@ public class HttpRequest {
 
     private Object body;
 }
+
+
+// private HttpHeaders headers; we have the type of headers as HttpHeaders, so its setter
+// takes argument of type HttpHeaders. So we need to pass the HttpHeaders object to the setter method.
+
+//httpRequest.setHeaders("Authorization", "Bearer " + tokenResponse); // wrong
+//httpRequest.setHeaders("Content-Type", "application/json");			// wrong

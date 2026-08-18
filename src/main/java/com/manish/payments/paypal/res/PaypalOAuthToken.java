@@ -1,4 +1,4 @@
-package com.manish.payments.paypal;
+package com.manish.payments.paypal.res;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

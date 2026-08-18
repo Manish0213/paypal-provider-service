@@ -1,6 +1,9 @@
 package com.manish.payments.service.interfaces;
 
+import com.manish.payments.pojo.CreateOrderRequest;
+import com.manish.payments.pojo.OrderResponse;
+
 public interface PaymentService {
 	
-	public String createOrder();
+	public OrderResponse createOrder(CreateOrderRequest createOrderRequest);
 }

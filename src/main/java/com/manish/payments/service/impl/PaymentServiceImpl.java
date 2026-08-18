@@ -1,9 +1,17 @@
 package com.manish.payments.service.impl;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.manish.payments.http.HttpRequest;
+import com.manish.payments.http.HttpServiceEngine;
+import com.manish.payments.paypal.res.CreateOrderResponse;
+import com.manish.payments.pojo.CreateOrderRequest;
+import com.manish.payments.pojo.OrderResponse;
 import com.manish.payments.service.TokenService;
+import com.manish.payments.service.helper.CreateOrderHelper;
 import com.manish.payments.service.interfaces.PaymentService;
+import com.manish.payments.util.JsonUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,20 +22,30 @@ import lombok.extern.slf4j.Slf4j;
 public class PaymentServiceImpl implements PaymentService {
 	
 	private final TokenService tokenService;
+	private final HttpServiceEngine httpServiceEngine;
+	private final CreateOrderHelper createOrderHelper;
+	private final JsonUtil jsonUtil;
 
 	@Override
-	public String createOrder() {
+	public OrderResponse createOrder(CreateOrderRequest createOrderRequest) {
+		log.info("Creating order with request: {}", createOrderRequest);
 		
-		String tokenResponse = tokenService.getAccessToken();
-		log.info("Access token received: {}", tokenResponse);
+		String accessToken = tokenService.getAccessToken();
+		log.info("Access token received: {}", accessToken);
 		
-		/* TODO
-		 1. Call Paypal Oauth API to get access token
-		 2. finalize the Request and Response for Create Order API
-		 3. Call Paypal Create Order API to create order
-		 4. Return the response to the client
-		 */
-		return "Order created successfully! " + tokenResponse;
+		HttpRequest httpRequest = createOrderHelper.prepareCreateOrderHttpRequest(createOrderRequest, accessToken);
+		log.info("HttpRequest prepared for create order: {}", httpRequest);
+		
+		ResponseEntity<String> successResponse = httpServiceEngine.makeHttpCall(httpRequest);
+		log.info("Create order response received: {}", successResponse);
+		
+		CreateOrderResponse response = jsonUtil.fromJson(successResponse.getBody(), CreateOrderResponse.class);
+		log.info("Create order response parsed: {}", response);
+		
+		OrderResponse orderResponse = createOrderHelper.convertToOrderResponse(response);
+		log.info("OrderResponse created: {}", orderResponse);
+		
+		return orderResponse;
 	}
 
 }
