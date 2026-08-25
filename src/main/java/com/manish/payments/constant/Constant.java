@@ -16,4 +16,5 @@ public class Constant {
 	public static final String SHIPPING_REF_NO_SHIPPING = "NO_SHIPPING";
 	public static final String LANDING_PAGE_LOGIN = "LOGIN";
 	public static final String IMMEDIATE_PAYMENT_REQUIRED = "IMMEDIATE_PAYMENT_REQUIRED";
+	public static final String PAYER_ACTION_REQUIRED = "PAYER_ACTION_REQUIRED";
 }

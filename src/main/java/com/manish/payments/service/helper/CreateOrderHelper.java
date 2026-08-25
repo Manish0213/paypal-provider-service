@@ -3,10 +3,14 @@ package com.manish.payments.service.helper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.manish.payments.constant.Constant;
+import com.manish.payments.constant.ErrorCodeEnum;
+import com.manish.payments.exception.PaypalProviderException;
 import com.manish.payments.http.HttpRequest;
 import com.manish.payments.paypal.req.Amount;
 import com.manish.payments.paypal.req.ExperienceContext;
@@ -15,9 +19,11 @@ import com.manish.payments.paypal.req.PaymentSource;
 import com.manish.payments.paypal.req.Paypal;
 import com.manish.payments.paypal.req.PurchaseUnit;
 import com.manish.payments.paypal.res.CreateOrderResponse;
+import com.manish.payments.paypal.res.error.PaypalErrorResponse;
 import com.manish.payments.pojo.CreateOrderRequest;
 import com.manish.payments.pojo.OrderResponse;
 import com.manish.payments.util.JsonUtil;
+import com.manish.payments.util.PaypalOrderUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class CreateOrderHelper {
-	
+
 	private final JsonUtil jsonUtil;
 	
 	@Value("${paypal.create.order.url}")
@@ -72,7 +78,11 @@ public class CreateOrderHelper {
 				amount.setValue(String.format(Constant.DECIMAL_FORMAT_2F, createOrderRequest.getAmount()));
 				break;
 			default:
-				throw new IllegalArgumentException("Unsupported currency code: " + createOrderRequest.getCurrencyCode());
+				throw new PaypalProviderException(
+						ErrorCodeEnum.INVALID_CURRENCY_CODE.getErrorCode(),
+						ErrorCodeEnum.INVALID_CURRENCY_CODE.getErrorMessage() + ": " + createOrderRequest.getCurrencyCode(),
+						HttpStatus.BAD_REQUEST
+						);
 		}
 		
 //		convert amount to string with 2 decimal places
@@ -122,7 +132,7 @@ public class CreateOrderHelper {
 		return headers;
 	}
 	
-	public OrderResponse convertToOrderResponse(CreateOrderResponse createOrderResponse) {
+	private OrderResponse convertToOrderResponse(CreateOrderResponse createOrderResponse) {
 
 	    OrderResponse orderResponse = new OrderResponse();
 
@@ -135,5 +145,63 @@ public class CreateOrderHelper {
 	            .ifPresent(link -> orderResponse.setRedirectUrl(link.getHref()));
 
 	    return orderResponse;
+	}
+	
+	public OrderResponse processResponse(ResponseEntity<String> httpResponse) {
+		log.info("Processing PayPal response in PaymentServiceImpl "+ "httpResponse:{}", httpResponse);
+		
+		if(httpResponse.getStatusCode().is2xxSuccessful()) {
+			log.info("HTTP call successful with status code: {}", httpResponse.getStatusCode());
+			
+			CreateOrderResponse successResponse = jsonUtil.fromJson(httpResponse.getBody(), CreateOrderResponse.class);
+			log.info("Create order response parsed: {}", httpResponse);
+			
+			OrderResponse orderResponse = convertToOrderResponse(successResponse);
+			log.info("OrderResponse created: {}", orderResponse);
+			
+			if(orderResponse != null
+					&& orderResponse.getOrderId() != null
+					&& !orderResponse.getOrderId().isEmpty()
+					&& orderResponse.getPaypalStatus() != null
+					&& orderResponse.getPaypalStatus().equalsIgnoreCase(Constant.PAYER_ACTION_REQUIRED)
+					&& orderResponse.getRedirectUrl() != null
+					&& !orderResponse.getRedirectUrl().isEmpty()) {
+				
+				log.info("Valid OrderResponse received: {}", orderResponse);
+				return orderResponse;
+			}
+			
+			log.error("Invalid OrderResponse received: {}", orderResponse);
+		}
+		
+		if(httpResponse.getStatusCode().is4xxClientError()
+				|| httpResponse.getStatusCode().is5xxServerError()) {
+			log.error("Recieved 4xx, 5xx error response from PayPal service");
+			
+			PaypalErrorResponse errorResponse = jsonUtil.fromJson(httpResponse.getBody(), PaypalErrorResponse.class);
+			log.info("Converted error response JSON to PaypalErrorResponse object: {}", errorResponse);
+			
+			String errorCode = ErrorCodeEnum.PAYPAL_ERROR.getErrorCode();
+			String errorMessage = PaypalOrderUtil.buildPaypalErrorMessage(errorResponse);
+			log.info("build error message: {}", errorMessage);
+			
+			int statusCode = httpResponse.getStatusCode().value();
+			HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
+			
+			throw new PaypalProviderException(
+					ErrorCodeEnum.PAYPAL_ERROR.getErrorCode(),
+					errorMessage,
+					HttpStatus.valueOf(httpResponse.getStatusCode().value())
+					);
+		}
+		
+		log.error("Unexpected response from PayPal service. "
+				+ "httpResponse: {}", httpResponse);
+		
+		throw new PaypalProviderException(
+				ErrorCodeEnum.PAYPAL_UNKNOWN_ERROR.getErrorCode(),
+				ErrorCodeEnum.PAYPAL_UNKNOWN_ERROR.getErrorMessage(),
+				HttpStatus.BAD_GATEWAY
+				);
 	}
 }

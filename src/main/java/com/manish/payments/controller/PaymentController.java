@@ -2,7 +2,6 @@ package com.manish.payments.controller;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.manish.payments.pojo.CreateOrderRequest;
@@ -14,13 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @Slf4j
-@RequestMapping("/v1/payments")
 @RequiredArgsConstructor
 public class PaymentController {
 	private final PaymentService paymentService;
 	
 	//finilize request endpoint as RestAPI Standards
-	@PostMapping("/createOrder")
+	@PostMapping("/order")
 	public OrderResponse createOrder(@RequestBody CreateOrderRequest createOrderRequest) {
 		log.info("PaymentController: createOrder() method called");
 		
@@ -29,5 +27,5 @@ public class PaymentController {
 		
 		return response;
 	}
-
+	
 }
