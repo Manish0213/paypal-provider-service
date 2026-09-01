@@ -9,6 +9,7 @@ import com.manish.payments.pojo.CreateOrderRequest;
 import com.manish.payments.pojo.OrderResponse;
 import com.manish.payments.service.PaymentValidator;
 import com.manish.payments.service.TokenService;
+import com.manish.payments.service.helper.CaptureOrderHelper;
 import com.manish.payments.service.helper.CreateOrderHelper;
 import com.manish.payments.service.interfaces.PaymentService;
 
@@ -24,12 +25,13 @@ public class PaymentServiceImpl implements PaymentService {
 	private final HttpServiceEngine httpServiceEngine;
 	private final CreateOrderHelper createOrderHelper;
 	private final PaymentValidator paymentValidator;
+	private final CaptureOrderHelper captureOrderHelper;
 
 	@Override
 	public OrderResponse createOrder(CreateOrderRequest createOrderRequest) {
 		log.info("Creating order with request: {}", createOrderRequest);
 		
-//		paymentValidator.validateCreateOrderRequest(createOrderRequest);
+		paymentValidator.validateCreateOrderRequest(createOrderRequest);
 		log.info("Create order request validated successfully");
 		
 		String accessToken = tokenService.getAccessToken();
@@ -42,6 +44,24 @@ public class PaymentServiceImpl implements PaymentService {
 		log.info("Create order response received: {}", httpResponse);
 		
 		OrderResponse orderResponse = createOrderHelper.processResponse(httpResponse);
+		
+		return orderResponse;
+	}
+
+	@Override
+	public OrderResponse captureOrder(String orderId) {
+		log.info("capturing order for orderId: {}", orderId);
+		
+		String accessToken = tokenService.getAccessToken();
+		log.info("Access token received: {}", accessToken);
+		
+		HttpRequest httpRequest = captureOrderHelper.prepareCaptureOrderHttpRequest(orderId, accessToken);
+		log.info("HttpRequest prepared for capture order: {}", httpRequest);
+		
+		ResponseEntity<String> httpResponse = httpServiceEngine.makeHttpCall(httpRequest);
+		log.info("Create order response received: {}", httpResponse);
+		
+		OrderResponse orderResponse = captureOrderHelper.processResponse(httpResponse);
 		
 		return orderResponse;
 	}

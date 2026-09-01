@@ -6,4 +6,5 @@ import com.manish.payments.pojo.OrderResponse;
 public interface PaymentService {
 	
 	public OrderResponse createOrder(CreateOrderRequest createOrderRequest);
+	public OrderResponse captureOrder(String orderId);
 }
