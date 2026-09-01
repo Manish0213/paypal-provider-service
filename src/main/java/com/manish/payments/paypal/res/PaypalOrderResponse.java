@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
-public class CreateOrderResponse {
+public class PaypalOrderResponse {
 	private String id;
 
     private String status;

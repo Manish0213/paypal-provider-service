@@ -1,5 +1,6 @@
 package com.manish.payments.controller;
 
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,5 +28,15 @@ public class PaymentController {
 		
 		return response;
 	}
+	
+	@PostMapping("/order/{orderId}/capture")
+	public OrderResponse captureOrder(@PathVariable String orderId) {
+		log.info("order id for capture {}", orderId);
+		
+		OrderResponse response = paymentService.captureOrder(orderId);
+		log.info("capture order response retrieved from payment service {}", response);
+		
+		return response;
+ }
 	
 }

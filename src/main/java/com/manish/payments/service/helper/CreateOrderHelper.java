@@ -18,7 +18,7 @@ import com.manish.payments.paypal.req.OrderRequest;
 import com.manish.payments.paypal.req.PaymentSource;
 import com.manish.payments.paypal.req.Paypal;
 import com.manish.payments.paypal.req.PurchaseUnit;
-import com.manish.payments.paypal.res.CreateOrderResponse;
+import com.manish.payments.paypal.res.PaypalOrderResponse;
 import com.manish.payments.paypal.res.error.PaypalErrorResponse;
 import com.manish.payments.pojo.CreateOrderRequest;
 import com.manish.payments.pojo.OrderResponse;
@@ -39,7 +39,7 @@ public class CreateOrderHelper {
 	private String createOrderUrl;
 	
 	public HttpRequest prepareCreateOrderHttpRequest(CreateOrderRequest createOrderRequest, String accessToken) {
-		log.info("Preparing HttpRequest for create order... || createOrderRequest: {}, AccessToken: {}", createOrderRequest, accessToken);
+			log.info("Preparing HttpRequest for create order... || createOrderRequest: {}, AccessToken: {}", createOrderRequest, accessToken);
 		
 			// prepare headers for the request
 			HttpHeaders headers = prepareHeader(accessToken);
@@ -132,14 +132,14 @@ public class CreateOrderHelper {
 		return headers;
 	}
 	
-	private OrderResponse convertToOrderResponse(CreateOrderResponse createOrderResponse) {
+	private OrderResponse convertToOrderResponse(PaypalOrderResponse paypalOrderResponse) {
 
 	    OrderResponse orderResponse = new OrderResponse();
 
-	    orderResponse.setOrderId(createOrderResponse.getId());
-	    orderResponse.setPaypalStatus(createOrderResponse.getStatus());
+	    orderResponse.setOrderId(paypalOrderResponse.getId());
+	    orderResponse.setPaypalStatus(paypalOrderResponse.getStatus());
 
-	    createOrderResponse.getLinks().stream()
+	    paypalOrderResponse.getLinks().stream()
 	            .filter(link -> "payer-action".equals(link.getRel()))
 	            .findFirst()
 	            .ifPresent(link -> orderResponse.setRedirectUrl(link.getHref()));
@@ -153,7 +153,7 @@ public class CreateOrderHelper {
 		if(httpResponse.getStatusCode().is2xxSuccessful()) {
 			log.info("HTTP call successful with status code: {}", httpResponse.getStatusCode());
 			
-			CreateOrderResponse successResponse = jsonUtil.fromJson(httpResponse.getBody(), CreateOrderResponse.class);
+			PaypalOrderResponse successResponse = jsonUtil.fromJson(httpResponse.getBody(), PaypalOrderResponse.class);
 			log.info("Create order response parsed: {}", httpResponse);
 			
 			OrderResponse orderResponse = convertToOrderResponse(successResponse);
